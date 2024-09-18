@@ -378,7 +378,7 @@ class LaravelLocalization
         if ($forceDefaultLocation || !($locale === $this->defaultLocale && $this->hideDefaultLocaleInURL())) {
             $route = '/'.$locale;
         }
-        if (\is_string($locale) && $this->translator->has($transKeyName, $locale)) {
+        if (\is_string($locale) && ($this->translator->has($transKeyName, $locale) || in_array($transKeyName, $this->translatedRoutes))) {
             $translation = $this->translator->get($transKeyName, [], $locale);
             $route .= '/'.$translation;
 
@@ -647,11 +647,11 @@ class LaravelLocalization
             elseif ($value instanceOf UrlRoutable) {
                 $value = $value->getRouteKey();
             }
-            $route = str_replace(array('{'.$key.'}', '{'.$key.'?}'), $value, $route);
+            $route = preg_replace('/{' . $key . '(:\w+)?(\?)?}/', $value, $route);
         }
 
         // delete empty optional arguments that are not in the $attributes array
-        $route = preg_replace('/\/{[^)]+\?}/', '', $route);
+        $route = preg_replace('/\/{\w+\?/', '', $route);
 
         return $route;
     }
