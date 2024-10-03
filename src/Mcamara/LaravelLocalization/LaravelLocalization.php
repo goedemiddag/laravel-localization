@@ -651,7 +651,7 @@ class LaravelLocalization
         }
 
         // delete empty optional arguments that are not in the $attributes array
-        $route = preg_replace('/\/{\w+\?/', '', $route);
+        $route = preg_replace('/\/{\w+\?}/', '', $route);
 
         return $route;
     }
