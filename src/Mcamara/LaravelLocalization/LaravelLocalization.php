@@ -1057,4 +1057,52 @@ class LaravelLocalization
             });
         }
     }
+
+    /**
+     * Create a signed route URL for a named route.
+     *
+     * @param string $locale
+     * @param \BackedEnum|string $name
+     * @param mixed $parameters
+     * @param \DateTimeInterface|\DateInterval|int|null $expiration
+     * @return string
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function translatedSignedRoute($locale, $name, $parameters = [], $expiration = null)
+    {
+        $this->url->ensureSignedRouteParametersAreNotReserved(
+            $parameters = Arr::wrap($parameters)
+        );
+
+        if ($expiration) {
+            $parameters = $parameters + ['expires' => $this->url->availableAt($expiration)];
+        }
+
+        ksort($parameters);
+
+        $key = call_user_func($this->url->keyResolver);
+
+        return $this->getURLFromRouteNameTranslated($locale, $name, $parameters + [
+                'signature' => hash_hmac(
+                    'sha256',
+                    $this->getURLFromRouteNameTranslated($locale, $name, $parameters),
+                    is_array($key) ? $key[0] : $key
+                ),
+            ]);
+    }
+
+    /**
+     * Create a temporary signed route URL for a named route.
+     *
+     * @param string $locale
+     * @param \BackedEnum|string $name
+     * @param \DateTimeInterface|\DateInterval|int $expiration
+     * @param array $parameters
+     * @return string
+     */
+    public function translatedTemporarySignedRoute($locale, $name, $expiration, $parameters = [])
+    {
+        return $this->translatedSignedRoute($locale, $name, $parameters, $expiration);
+    }
 }
