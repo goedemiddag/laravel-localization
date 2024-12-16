@@ -9,6 +9,7 @@ use Illuminate\Contracts\Routing\UrlRoutable;
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Support\Env;
 use Mcamara\LaravelLocalization\Exceptions\SupportedLocalesNotDefined;
