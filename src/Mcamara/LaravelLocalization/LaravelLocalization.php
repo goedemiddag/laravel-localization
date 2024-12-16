@@ -10,13 +10,17 @@ use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Arr;
+use Illuminate\Support\InteractsWithTime;
 use Illuminate\Support\Str;
 use Illuminate\Support\Env;
+use InvalidArgumentException;
 use Mcamara\LaravelLocalization\Exceptions\SupportedLocalesNotDefined;
 use Mcamara\LaravelLocalization\Exceptions\UnsupportedLocaleException;
 
 class LaravelLocalization
 {
+    use InteractsWithTime;
+
     /**
      * The env key that the forced locale for routing is stored in.
      */
@@ -1072,25 +1076,44 @@ class LaravelLocalization
      */
     public function translatedSignedRoute($locale, $name, $parameters = [], $expiration = null)
     {
-        $this->url->ensureSignedRouteParametersAreNotReserved(
+        $this->ensureSignedRouteParametersAreNotReserved(
             $parameters = Arr::wrap($parameters)
         );
 
         if ($expiration) {
-            $parameters = $parameters + ['expires' => $this->url->availableAt($expiration)];
+            $parameters = $parameters + ['expires' => $this->availableAt($expiration)];
         }
 
         ksort($parameters);
 
-        $key = call_user_func($this->url->keyResolver);
-
-        return $this->getURLFromRouteNameTranslated($locale, $name, $parameters + [
+        return $this->getLocalizedURL($locale, route($name, $parameters + [
                 'signature' => hash_hmac(
                     'sha256',
-                    $this->getURLFromRouteNameTranslated($locale, $name, $parameters),
-                    is_array($key) ? $key[0] : $key
+                    $this->getLocalizedURL($locale, route($name, $parameters)),
+                    config('app.key')
                 ),
-            ]);
+            ]));
+    }
+
+    /**
+     * Ensure the given signed route parameters are not reserved.
+     *
+     * @param mixed $parameters
+     * @return void
+     */
+    protected function ensureSignedRouteParametersAreNotReserved($parameters)
+    {
+        if (array_key_exists('signature', $parameters)) {
+            throw new InvalidArgumentException(
+                '"Signature" is a reserved parameter when generating signed routes. Please rename your route parameter.'
+            );
+        }
+
+        if (array_key_exists('expires', $parameters)) {
+            throw new InvalidArgumentException(
+                '"Expires" is a reserved parameter when generating signed routes. Please rename your route parameter.'
+            );
+        }
     }
 
     /**
